@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Cocos Challenge API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Portfolio",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "x-correlation-id", "value": "demo-portfolio" }],
+        "url": "http://localhost:3000/accounts/10001/portfolio"
+      }
+    },
+    {
+      "name": "Search instruments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/instruments?q=teco"
+      }
+    },
+    {
+      "name": "Submit market buy",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountNumber\": \"10001\",\n  \"ticker\": \"GGAL\",\n  \"side\": \"BUY\",\n  \"type\": \"MARKET\",\n  \"quantity\": 1\n}"
+        },
+        "url": "http://localhost:3000/orders"
+      }
+    },
+    {
+      "name": "Cancel order",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountNumber\": \"10001\"\n}"
+        },
+        "url": "http://localhost:3000/orders/5/cancellation"
+      }
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: Cocos Challenge API
+  version: 1.0.0
+  description: >
+    Portfolio, búsqueda de activos y órdenes. Los montos y los porcentajes
+    viajan como string decimal. No hay autenticación: cada operación indica
+    el número de cuenta.
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: health
+  - name: portfolio
+  - name: instruments
+  - name: orders
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Estado del proceso para el healthcheck
+      responses:
+        "200":
+          description: El proceso está listo para recibir tráfico
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+  /accounts/{accountNumber}/portfolio:
+    get:
+      tags: [portfolio]
+      summary: Consultar valor, disponible y posiciones de una cuenta
+      parameters:
+        - $ref: "#/components/parameters/AccountNumber"
+        - $ref: "#/components/parameters/CorrelationId"
+      responses:
+        "200":
+          description: Portfolio calculado
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /instruments:
+    get:
+      tags: [instruments]
+      summary: Buscar activos por ticker o nombre
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+        - name: q
+          in: query
+          required: true
+          description: Texto parcial. No puede ser vacío.
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Coincidencias ordenadas por ticker, sin la moneda
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Instrument"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /orders:
+    post:
+      tags: [orders]
+      summary: Enviar una compra o una venta
+      description: >
+        Una orden a mercado válida queda FILLED. Una límite válida queda NEW
+        y reserva disponible. Si el disponible no alcanza, la orden se crea
+        igual con estado REJECTED. Un envío inválido no crea orden.
+      parameters:
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitOrder"
+      responses:
+        "201":
+          description: La orden quedó registrada, incluso si el estado es REJECTED
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /orders/{orderId}/cancellation:
+    post:
+      tags: [orders]
+      summary: Cancelar una orden propia en estado NEW
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+        - $ref: "#/components/parameters/CorrelationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountNumber]
+              properties:
+                accountNumber:
+                  $ref: "#/components/schemas/AccountNumber"
+      responses:
+        "200":
+          description: La orden pasó a CANCELLED y se liberó su reserva
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: La orden existe y no está en NEW. No cambia nada.
+          headers:
+            x-correlation-id:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  parameters:
+    AccountNumber:
+      name: accountNumber
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/AccountNumber"
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    CorrelationId:
+      name: x-correlation-id
+      in: header
+      required: false
+      schema:
+        type: string
+        minLength: 1
+  headers:
+    CorrelationId:
+      description: Identificador de la operación. Se reutiliza el del request o se genera.
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: El envío es inválido y no se escribió una orden
+      headers:
+        x-correlation-id:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: La cuenta, el activo o la orden no existen para esa cuenta
+      headers:
+        x-correlation-id:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    AccountNumber:
+      type: string
+      minLength: 1
+      example: "10001"
+    Money:
+      type: string
+      description: Pesos con dos decimales, sin número JSON.
+      pattern: '^-?\d+\.\d{2}$'
+      example: "627500.00"
+    Percent:
+      type: string
+      description: Porcentaje con dos decimales. Se omite con null cuando no se puede calcular.
+      pattern: '^-?\d+\.\d{2}$'
+      example: "-0.45"
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    Instrument:
+      type: object
+      required: [ticker, name, type]
+      properties:
+        ticker:
+          type: string
+          example: TECO2
+        name:
+          type: string
+          example: Telecom
+        type:
+          type: string
+          example: ACCIONES
+    Position:
+      type: object
+      required: [ticker, name, quantity, marketValue]
+      properties:
+        ticker:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+          description: Cantidad neta ejecutada. Puede ser negativa.
+        marketValue:
+          $ref: "#/components/schemas/Money"
+        totalReturnPercent:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Percent"
+    Portfolio:
+      type: object
+      required: [accountNumber, totalValue, availablePesos, positions]
+      properties:
+        accountNumber:
+          $ref: "#/components/schemas/AccountNumber"
+        totalValue:
+          $ref: "#/components/schemas/Money"
+        availablePesos:
+          $ref: "#/components/schemas/Money"
+        positions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Position"
+    SubmitOrder:
+      type: object
+      required: [accountNumber, ticker, side, type]
+      properties:
+        accountNumber:
+          $ref: "#/components/schemas/AccountNumber"
+        ticker:
+          type: string
+          minLength: 1
+        side:
+          type: string
+          enum: [BUY, SELL]
+        type:
+          type: string
+          enum: [MARKET, LIMIT]
+        quantity:
+          type: integer
+          minimum: 1
+          description: Cantidad de acciones. Excluyente con amount.
+        amount:
+          $ref: "#/components/schemas/Money"
+        price:
+          description: Obligatorio si type es LIMIT. Se ignora si type es MARKET.
+          allOf:
+            - $ref: "#/components/schemas/Money"
+      oneOf:
+        - required: [quantity]
+          not:
+            required: [amount]
+        - required: [amount]
+          not:
+            required: [quantity]
+    Order:
+      type: object
+      required: [id, accountNumber, ticker, side, type, quantity, price, status]
+      properties:
+        id:
+          type: integer
+        accountNumber:
+          $ref: "#/components/schemas/AccountNumber"
+        ticker:
+          type: string
+        side:
+          type: string
+          enum: [BUY, SELL, CASH_IN, CASH_OUT]
+        type:
+          type: string
+          enum: [MARKET, LIMIT]
+        quantity:
+          type: integer
+          description: Acciones enteras registradas en size.
+        price:
+          $ref: "#/components/schemas/Money"
+        status:
+          type: string
+          enum: [NEW, FILLED, REJECTED, CANCELLED]

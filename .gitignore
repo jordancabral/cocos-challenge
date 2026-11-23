@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+*.log
+.env*
+coverage/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+.cursor/
+
+# Spec Kit install. The project keeps the constitution; feature docs live in specs/.
+.specify/*
+!.specify/memory/
+.specify/memory/*
+!.specify/memory/constitution.md

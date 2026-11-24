@@ -1,4 +1,11 @@
-import { Body, Controller, Inject, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Inject,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiConflictResponse,
@@ -26,6 +33,7 @@ export class OrdersCancellationController {
   constructor(@Inject(CancelOrder) private readonly cancelOrder: CancelOrder) {}
 
   @Post(':orderId/cancellation')
+  @HttpCode(200)
   @ApiOperation({
     summary: 'Cancelar una orden pendiente',
     description: 'Escribe: libera la reserva de una orden pendiente.',

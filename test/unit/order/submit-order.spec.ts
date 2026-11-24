@@ -1,4 +1,7 @@
-import { NotFoundError } from '../../../src/application/errors';
+import {
+  InvalidRequestError,
+  NotFoundError,
+} from '../../../src/application/errors';
 import { noopLogger } from '../../../src/application/logging/app-logger';
 import {
   TradingContext,
@@ -9,6 +12,7 @@ import { Instrument } from '../../../src/domain/instrument/instrument';
 import { Money } from '../../../src/domain/money/money';
 import { StoredOrder } from '../../../src/domain/order/order';
 import { decideSubmit } from '../../../src/domain/order/submit-order';
+import { toHttpError } from '../../../src/infrastructure/http/http-exception.filter';
 
 const teco: Instrument = {
   id: 7,
@@ -125,6 +129,56 @@ describe('decideSubmit', () => {
       ).outcome,
     ).toBe('invalid');
   });
+
+  it('rejects numbers that do not fit in the integer or numeric columns', () => {
+    expect(
+      decideSubmit(
+        { side: 'BUY', orderType: 'MARKET', quantity: 2147483648 },
+        { ...base, availablePesos: Money.of('99999999.99') },
+      ).outcome,
+    ).toBe('invalid');
+    expect(
+      decideSubmit(
+        {
+          side: 'BUY',
+          orderType: 'LIMIT',
+          quantity: 1,
+          limitPrice: '999999999.99',
+        },
+        { ...base, availablePesos: Money.of('99999999.99') },
+      ).outcome,
+    ).toBe('invalid');
+    expect(
+      decideSubmit(
+        {
+          side: 'BUY',
+          orderType: 'MARKET',
+          amount: '999999999999999999999.00',
+        },
+        base,
+      ).outcome,
+    ).toBe('invalid');
+  });
+
+  it('accepts the largest integer size and the largest numeric(10,2) price', () => {
+    expect(
+      decideSubmit(
+        { side: 'SELL', orderType: 'MARKET', quantity: 2147483647 },
+        { ...base, availableShares: 2147483647 },
+      ),
+    ).toMatchObject({ outcome: 'persist', status: 'FILLED', size: 2147483647 });
+    expect(
+      decideSubmit(
+        {
+          side: 'BUY',
+          orderType: 'LIMIT',
+          quantity: 1,
+          limitPrice: '99999999.99',
+        },
+        { ...base, availablePesos: Money.of('99999999.99') },
+      ),
+    ).toMatchObject({ outcome: 'persist', status: 'NEW', size: 1 });
+  });
 });
 
 describe('SubmitOrder', () => {
@@ -233,4 +287,57 @@ describe('SubmitOrder', () => {
       }),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
+
+  it.each([
+    { quantity: 2147483648 },
+    { quantity: 1, orderType: 'LIMIT' as const, limitPrice: '999999999.99' },
+    { amount: '999999999999999999999.00' },
+  ])(
+    'returns 400 and does not persist when the payload exceeds a column limit %#',
+    async (extra) => {
+      let inserted = false;
+      const unitOfWork: UnitOfWork = {
+        async run(_accountNumber, work) {
+          const context: TradingContext = {
+            userId: 1,
+            accountNumber: '10001',
+            async findInstrument() {
+              return teco;
+            },
+            async listOrders() {
+              return [];
+            },
+            async latestClose() {
+              return Money.of('30.00');
+            },
+            async insertOrder() {
+              inserted = true;
+              throw new Error('should not insert');
+            },
+            async findOrder() {
+              return null;
+            },
+            async cancelOrder() {
+              return undefined;
+            },
+          };
+          return work(context);
+        },
+      };
+      const error = await new SubmitOrder(unitOfWork, noopLogger)
+        .execute({
+          accountNumber: '10001',
+          ticker: 'TECO2',
+          side: 'BUY',
+          orderType: extra.orderType ?? 'MARKET',
+          quantity: extra.quantity,
+          amount: extra.amount,
+          limitPrice: extra.limitPrice,
+        })
+        .catch((caught: unknown) => caught);
+      expect(error).toBeInstanceOf(InvalidRequestError);
+      expect(toHttpError(error).status).toBe(400);
+      expect(inserted).toBe(false);
+    },
+  );
 });

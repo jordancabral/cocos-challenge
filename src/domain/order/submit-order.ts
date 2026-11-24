@@ -2,6 +2,9 @@ import { Instrument } from '../instrument/instrument';
 import { Money } from '../money/money';
 import { OrderKind, OrderStatus } from './order';
 
+const MAX_ORDER_SIZE = 2147483647;
+const MAX_STORED_PRICE = Money.of('99999999.99');
+
 export interface SubmitCommand {
   side: 'BUY' | 'SELL';
   orderType: OrderKind;
@@ -52,6 +55,12 @@ export function decideSubmit(
       message: 'Quantity must be a positive integer',
     };
   }
+  if (hasQuantity && (command.quantity ?? 0) > MAX_ORDER_SIZE) {
+    return {
+      outcome: 'invalid',
+      message: 'Quantity exceeds the integer column maximum',
+    };
+  }
 
   let amount: Money | undefined;
   if (command.amount !== undefined) {
@@ -81,6 +90,12 @@ export function decideSubmit(
         message: 'Limit price must be positive with at most two decimals',
       };
     }
+    if (limitPrice.greaterThan(MAX_STORED_PRICE)) {
+      return {
+        outcome: 'invalid',
+        message: 'Price exceeds numeric(10,2)',
+      };
+    }
   }
 
   const price =
@@ -88,8 +103,17 @@ export function decideSubmit(
   if (!price || !price.isPositive()) {
     return { outcome: 'invalid', message: 'Instrument has no last price' };
   }
+  if (price.greaterThan(MAX_STORED_PRICE)) {
+    return { outcome: 'invalid', message: 'Price exceeds numeric(10,2)' };
+  }
 
   const size = command.quantity ?? amount?.wholeSharesAt(price) ?? 0;
+  if (!Number.isSafeInteger(size) || size > MAX_ORDER_SIZE) {
+    return {
+      outcome: 'invalid',
+      message: 'Quantity exceeds the integer column maximum',
+    };
+  }
   if (size < 1) {
     return { outcome: 'invalid', message: 'Amount does not buy a whole share' };
   }

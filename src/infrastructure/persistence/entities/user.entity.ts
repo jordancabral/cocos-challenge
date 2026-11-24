@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+@Index('users_accountnumber_uidx', ['accountNumber'], { unique: true })
 @Entity({ name: 'users' })
 export class UserEntity {
   @PrimaryGeneratedColumn()

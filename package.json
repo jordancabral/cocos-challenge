@@ -11,6 +11,7 @@
     "start:local": "docker compose up --build",
     "start:dev": "tsc -p tsconfig.json && node dist/main.js",
     "openapi:generate": "tsc -p tsconfig.json && node dist/generate-openapi.js",
+    "migration:run": "tsc -p tsconfig.json && node dist/run-migrations.js",
     "test": "jest --selectProjects unit --coverage",
     "test:integration": "jest --selectProjects integration",
     "lint": "eslint .",

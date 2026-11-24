@@ -38,6 +38,11 @@ CREATE TABLE marketdata (
   FOREIGN KEY (instrumentId) REFERENCES instruments(id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS users_accountnumber_uidx ON users (accountnumber);
+CREATE UNIQUE INDEX IF NOT EXISTS instruments_ticker_uidx ON instruments (ticker);
+CREATE INDEX IF NOT EXISTS orders_userid_idx ON orders (userid);
+CREATE INDEX IF NOT EXISTS marketdata_instrumentid_idx ON marketdata (instrumentid);
+
 INSERT INTO users (email,accountNumber) VALUES
    ('emiliano@test.com','10001'),
    ('jose@test.com','10002'),

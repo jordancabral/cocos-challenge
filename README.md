@@ -22,13 +22,15 @@ La arquitectura es hexagonal. Las reglas de negocio viven en el centro y no cono
 
 ## Arranque local
 
-Todo corre en la máquina: la API y PostgreSQL. La base se crea con `db/database.sql`. No hace falta un `.env`.
+Todo corre en la máquina: la API y PostgreSQL. La base se crea con `db/database.sql`, que también crea los índices de búsqueda. No hace falta un `.env`.
 
 ```bash
 npm run start:local
 ```
 
 Eso ejecuta `docker compose up --build`. La API queda en `http://localhost:3000`. `GET /health` responde 200.
+
+Al arrancar, la API aplica las migraciones pendientes. Un volumen que ya existía no vuelve a ejecutar `db/database.sql`, pero recibe esos cambios cuando levanta el contenedor de la API.
 
 ## Arranque dev
 
@@ -44,7 +46,7 @@ Completar `USER` y `PASSWORD` en `DATABASE_URL`. Si la contraseña tiene caracte
 npm run start:dev
 ```
 
-La API queda en `http://localhost:3000`. Esta base ya tiene el esquema y los datos: el proceso no la recrea ni corre `db/database.sql` contra Neon.
+La API queda en `http://localhost:3000`. Esta base ya tiene el esquema y los datos: el proceso no la recrea ni corre `db/database.sql` contra Neon. Al arrancar aplica las migraciones pendientes, incluidos los índices de búsqueda.
 
 ## Tests
 

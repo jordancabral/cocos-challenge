@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
+@Index('instruments_ticker_uidx', ['ticker'], { unique: true })
 @Entity({ name: 'instruments' })
 export class InstrumentEntity {
   @PrimaryGeneratedColumn()

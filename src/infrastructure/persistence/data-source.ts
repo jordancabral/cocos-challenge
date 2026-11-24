@@ -3,6 +3,7 @@ import { InstrumentEntity } from './entities/instrument.entity';
 import { MarketDataEntity } from './entities/market-data.entity';
 import { OrderEntity } from './entities/order.entity';
 import { UserEntity } from './entities/user.entity';
+import { persistenceMigrations } from './migrations';
 
 export const persistenceEntities = [
   UserEntity,
@@ -16,6 +17,8 @@ export function postgresOptions(databaseUrl: string): DataSourceOptions {
     type: 'postgres',
     url: databaseUrl,
     entities: persistenceEntities,
+    migrations: persistenceMigrations,
+    migrationsRun: true,
     synchronize: false,
     ssl: sslOptions(databaseUrl),
   };

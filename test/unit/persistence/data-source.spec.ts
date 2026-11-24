@@ -8,6 +8,7 @@ describe('postgresOptions', () => {
     expect(options).toMatchObject({
       type: 'postgres',
       synchronize: false,
+      migrationsRun: true,
       ssl: { rejectUnauthorized: false },
     });
   });
@@ -19,6 +20,8 @@ describe('postgresOptions', () => {
     expect(options.type).toBe('postgres');
     if (options.type === 'postgres') {
       expect(options.ssl).toBeUndefined();
+      expect(options.synchronize).toBe(false);
+      expect(options.migrationsRun).toBe(true);
     }
   });
 });

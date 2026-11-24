@@ -3,12 +3,15 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiNotFoundResponse,
   ApiOperation,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { z } from 'zod';
 import { SubmitOrder } from '../../application/submit-order/submit-order';
+import { Order } from './order.schema';
 import {
   localOrderAmountExample,
   localOrderExample,
@@ -45,6 +48,7 @@ export const submitOrderSchema = z
     }
   });
 
+@ApiExtraModels(Order)
 @ApiTags('orders')
 @Controller('orders')
 export class OrdersController {
@@ -95,10 +99,7 @@ export class OrdersController {
   })
   @ApiCreatedResponse({
     description: 'La orden quedó registrada',
-    schema: {
-      type: 'object',
-      properties: { price: moneySchema },
-    },
+    schema: { $ref: getSchemaPath(Order) },
   })
   @ApiBadRequestResponse({
     description: 'El envío es inválido y no se crea una orden',

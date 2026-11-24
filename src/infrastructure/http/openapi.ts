@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { Order } from './order.schema';
 
 export const moneySchema = {
   type: 'string',
@@ -48,7 +49,9 @@ export function openApiConfig(): Omit<OpenAPIObject, 'paths'> {
 }
 
 export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
-  return SwaggerModule.createDocument(app, openApiConfig());
+  return SwaggerModule.createDocument(app, openApiConfig(), {
+    extraModels: [Order],
+  });
 }
 
 export function mountOpenApi(app: INestApplication): OpenAPIObject {

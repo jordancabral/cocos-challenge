@@ -57,6 +57,10 @@ npm run test:integration
 
 `npm test` cubre dominio y casos de uso sin base. La cobertura de statements, branches, functions y lines tiene que superar el 80 %. `npm run test:integration` ejecuta el envío de una orden contra PostgreSQL.
 
+## Control de la línea principal
+
+Un push a `main` dispara el control de `.github/workflows/ci.yml`. Corre el análisis, el formato, las pruebas unitarias, las pruebas de integración, el build y la creación de la imagen. Otra rama, una solicitud de revisión, un tag o una ejecución manual no lo disparan.
+
 ## Documentación
 
 Con el sistema en marcha:

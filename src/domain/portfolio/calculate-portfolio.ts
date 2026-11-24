@@ -7,6 +7,7 @@ export interface PositionView {
   quantity: number;
   marketValue: string;
   totalReturnPercent: string | null;
+  dailyReturnPercent: string | null;
 }
 
 export interface PortfolioView {
@@ -19,6 +20,7 @@ export interface PortfolioView {
 export interface CloseQuote {
   instrumentId: number;
   close: Money;
+  previousClose: Money | null;
 }
 
 interface Holding {
@@ -36,8 +38,8 @@ export function calculatePortfolio(input: {
 }): PortfolioView {
   const executed = executedPesos(input.orders);
   const reserved = reservedBuyPesos(input.orders);
-  const closesByInstrument = new Map(
-    input.closes.map((quote) => [quote.instrumentId, quote.close]),
+  const quotesByInstrument = new Map(
+    input.closes.map((quote) => [quote.instrumentId, quote]),
   );
   const holdings = holdingsFromFilled(input.orders);
   const positions: PositionView[] = [];
@@ -47,22 +49,26 @@ export function calculatePortfolio(input: {
     if (holding.quantity === 0) {
       continue;
     }
-    const close = closesByInstrument.get(holding.instrumentId);
-    if (!close) {
+    const quote = quotesByInstrument.get(holding.instrumentId);
+    if (!quote) {
       throw new Error(`Missing close for ${holding.ticker}`);
     }
-    const marketValue = close.timesInt(holding.quantity);
+    const marketValue = quote.close.timesInt(holding.quantity);
     marketTotal = marketTotal.plus(marketValue);
     const totalReturnPercent =
       holding.quantity > 0
         ? marketValue.returnPercentAgainst(holding.cost)
         : null;
+    const dailyReturnPercent = quote.previousClose
+      ? quote.close.returnPercentAgainst(quote.previousClose)
+      : null;
     positions.push({
       ticker: holding.ticker,
       name: holding.name,
       quantity: holding.quantity,
       marketValue: marketValue.toJson(),
       totalReturnPercent,
+      dailyReturnPercent,
     });
   }
 

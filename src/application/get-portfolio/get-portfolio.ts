@@ -26,10 +26,7 @@ export class GetPortfolio {
     return calculatePortfolio({
       accountNumber,
       orders,
-      closes: [...closes.entries()].map(([instrumentId, close]) => ({
-        instrumentId,
-        close,
-      })),
+      closes: [...closes.values()],
     });
   }
 }

@@ -13,7 +13,7 @@
 ### Session 2026-11-20
 
 - Q: ¿Una orden límite pendiente debe reducir los pesos o las acciones que la cuenta todavía puede usar? → A: La compra pendiente reserva pesos y la venta pendiente reserva acciones. El valor total de la cuenta no cambia.
-- Q: ¿El porcentaje de rendimiento de cada posición debe salir del costo de las órdenes ejecutadas, o del cambio de precio del día? → A: El porcentaje compara el valor actual con el costo de las órdenes ejecutadas. El retorno diario no se muestra.
+- Q: ¿El porcentaje de rendimiento de cada posición debe salir del costo de las órdenes ejecutadas, o del cambio de precio del día? → A: El rendimiento total compara el valor actual con el costo de las órdenes ejecutadas. El retorno diario se muestra además, según `specs/003-portfolio-both-returns/spec.md`.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -239,10 +239,7 @@ nada.
   redondeado mitad alejándose de cero. Si la cantidad neta no es positiva o
   el costo remanente no es positivo, el rendimiento MUST omitirse y MUST NOT
   informarse como cero.
-- **FR-009**: El rendimiento que muestra cada posición MUST ser solo el
-  rendimiento total contra el costo de las órdenes ejecutadas. El retorno
-  diario, (último cierre − cierre previo) / cierre previo de la sesión más
-  reciente, MUST NOT mostrarse en ningún resultado de esta funcionalidad.
+- **FR-009**: El rendimiento total que muestra cada posición MUST seguir siendo el resultado contra el costo de las órdenes ejecutadas. El retorno diario MUST mostrarse junto a ese rendimiento, con la fórmula y las omisiones de `specs/003-portfolio-both-returns/spec.md`.
 - **FR-010**: Una persona MUST poder buscar activos con un texto. El texto
   MUST compararse con el ticker y con el nombre, de forma parcial, sin
   distinguir mayúsculas y sin distinguir acentos. Cada activo MUST aparecer
@@ -326,9 +323,7 @@ nada.
   ventas ejecutadas cambian acciones y pesos. Los ingresos y egresos
   ejecutados cambian solo los pesos. Una compra límite pendiente reserva
   pesos y una venta límite pendiente reserva acciones hasta que se cancela.
-- **Precio de mercado**: El cierre de un activo, en pesos, para una sesión.
-  La sesión más reciente define el último precio con el que se valúa cada
-  posición. El cierre previo no se muestra en esta funcionalidad.
+- **Precio de mercado**: El cierre y el cierre previo de un activo, en pesos, para una sesión. La sesión más reciente define el último precio con el que se valúa cada posición. El cierre previo se usa para el retorno diario definido en `specs/003-portfolio-both-returns/spec.md`.
 
 ## Success Criteria *(mandatory)*
 
@@ -369,10 +364,7 @@ nada.
 - Una compra límite pendiente reserva pesos por cantidad por precio límite, y
   una venta límite pendiente reserva acciones. El valor total de la cuenta no
   cambia. Cancelar la orden libera la reserva. Una orden rechazada no reserva.
-- El rendimiento total de una posición es el resultado contra el costo
-  promedio de sus órdenes ejecutadas. No es el retorno diario del precio.
-- El retorno diario queda definido para no confundirlo con el rendimiento
-  total, y no se muestra en el portfolio.
+- El rendimiento total de una posición es el resultado contra el costo promedio de sus órdenes ejecutadas. El retorno diario es otro porcentaje y se muestra junto a él, según `specs/003-portfolio-both-returns/spec.md`.
 - La búsqueda usa un solo texto contra ticker o nombre. No hace falta enviar
   ticker y nombre por separado.
 - La comparación de la búsqueda ignora mayúsculas y acentos.

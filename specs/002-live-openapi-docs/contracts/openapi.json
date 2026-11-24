@@ -91,7 +91,43 @@
                     "positions": {
                       "type": "array",
                       "items": {
-                        "type": "object"
+                        "type": "object",
+                        "required": [
+                          "ticker",
+                          "name",
+                          "quantity",
+                          "marketValue",
+                          "totalReturnPercent",
+                          "dailyReturnPercent"
+                        ],
+                        "properties": {
+                          "ticker": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "integer"
+                          },
+                          "marketValue": {
+                            "type": "string",
+                            "pattern": "^-?\\d+\\.\\d{2}$",
+                            "example": "627500.00"
+                          },
+                          "totalReturnPercent": {
+                            "type": "string",
+                            "pattern": "^-?\\d+\\.\\d{2}$",
+                            "example": "627500.00",
+                            "nullable": true
+                          },
+                          "dailyReturnPercent": {
+                            "type": "string",
+                            "pattern": "^-?\\d+\\.\\d{2}$",
+                            "example": "627500.00",
+                            "nullable": true
+                          }
+                        }
                       }
                     }
                   }

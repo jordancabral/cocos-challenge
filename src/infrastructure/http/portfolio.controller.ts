@@ -39,7 +39,28 @@ export class PortfolioController {
         accountNumber: { type: 'string', example: localAccountNumber },
         totalValue: moneySchema,
         availablePesos: moneySchema,
-        positions: { type: 'array', items: { type: 'object' } },
+        positions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: [
+              'ticker',
+              'name',
+              'quantity',
+              'marketValue',
+              'totalReturnPercent',
+              'dailyReturnPercent',
+            ],
+            properties: {
+              ticker: { type: 'string' },
+              name: { type: 'string' },
+              quantity: { type: 'integer' },
+              marketValue: moneySchema,
+              totalReturnPercent: { ...moneySchema, nullable: true },
+              dailyReturnPercent: { ...moneySchema, nullable: true },
+            },
+          },
+        },
       },
     },
   })

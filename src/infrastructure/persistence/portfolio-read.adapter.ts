@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Account } from '../../domain/account/account';
 import { Money } from '../../domain/money/money';
+import { CloseQuote } from '../../domain/portfolio/calculate-portfolio';
 import { StoredOrder } from '../../domain/order/order';
 import { PortfolioReader } from '../../application/ports/repositories';
 import { OrderRow, toStoredOrder } from './mappers';
@@ -39,21 +40,34 @@ export class PortfolioReadAdapter implements PortfolioReader {
     return rows.map(toStoredOrder);
   }
 
-  async latestCloses(instrumentIds: number[]): Promise<Map<number, Money>> {
-    const closes = new Map<number, Money>();
+  async latestCloses(
+    instrumentIds: number[],
+  ): Promise<Map<number, CloseQuote>> {
+    const closes = new Map<number, CloseQuote>();
     if (instrumentIds.length === 0) {
       return closes;
     }
-    const rows: Array<{ instrumentid: number; close: string }> =
-      await this.dataSource.query(
-        `SELECT DISTINCT ON (instrumentid) instrumentid, close::text AS close
+    const rows: Array<{
+      instrumentid: number;
+      close: string;
+      previous_close: string | null;
+    }> = await this.dataSource.query(
+      `SELECT DISTINCT ON (instrumentid) instrumentid, close::text AS close,
+              previousclose::text AS previous_close
        FROM marketdata
        WHERE instrumentid = ANY($1::int[])
        ORDER BY instrumentid, date DESC`,
-        [instrumentIds],
-      );
+      [instrumentIds],
+    );
     for (const row of rows) {
-      closes.set(Number(row.instrumentid), Money.of(String(row.close)));
+      closes.set(Number(row.instrumentid), {
+        instrumentId: Number(row.instrumentid),
+        close: Money.of(String(row.close)),
+        previousClose:
+          row.previous_close === null
+            ? null
+            : Money.of(String(row.previous_close)),
+      });
     }
     return closes;
   }

@@ -155,9 +155,21 @@ const seedOrders = [
 ];
 
 const closes = [
-  { instrumentId: 47, close: Money.of('925.85') },
-  { instrumentId: 31, close: Money.of('1502.80') },
-  { instrumentId: 54, close: Money.of('229.50') },
+  {
+    instrumentId: 47,
+    close: Money.of('925.85'),
+    previousClose: Money.of('921.80'),
+  },
+  {
+    instrumentId: 31,
+    close: Money.of('1502.80'),
+    previousClose: Money.of('1520.25'),
+  },
+  {
+    instrumentId: 54,
+    close: Money.of('229.50'),
+    previousClose: Money.of('232.00'),
+  },
 ];
 
 describe('calculatePortfolio', () => {
@@ -176,6 +188,7 @@ describe('calculatePortfolio', () => {
         quantity: -10,
         marketValue: '-15028.00',
         totalReturnPercent: null,
+        dailyReturnPercent: '-1.15',
       },
       {
         ticker: 'METR',
@@ -183,6 +196,7 @@ describe('calculatePortfolio', () => {
         quantity: 500,
         marketValue: '114750.00',
         totalReturnPercent: '-8.20',
+        dailyReturnPercent: '-1.08',
       },
       {
         ticker: 'PAMP',
@@ -190,6 +204,7 @@ describe('calculatePortfolio', () => {
         quantity: 40,
         marketValue: '37034.00',
         totalReturnPercent: '-0.45',
+        dailyReturnPercent: '0.44',
       },
     ]);
   });
@@ -223,7 +238,13 @@ describe('calculatePortfolio', () => {
           datetime: '2023-07-12 13:00:00',
         }),
       ],
-      closes: [{ instrumentId: 1, close: Money.of('100.00') }],
+      closes: [
+        {
+          instrumentId: 1,
+          close: Money.of('100.00'),
+          previousClose: null,
+        },
+      ],
     });
     expect(portfolio.availablePesos).toBe('800.00');
     expect(portfolio.totalValue).toBe('1000.00');
@@ -263,5 +284,67 @@ describe('calculatePortfolio', () => {
         closes: [],
       }),
     ).toThrow('Missing close for TECO2');
+  });
+
+  it('omits only the percentage that cannot be calculated', () => {
+    const held = [
+      order({
+        id: 1,
+        instrumentId: 1,
+        ticker: 'TECO2',
+        name: 'Telecom',
+        side: 'BUY',
+        size: 2,
+        price: '50.00',
+        status: 'FILLED',
+        datetime: '2023-07-12 12:00:00',
+      }),
+    ];
+    const withoutPrevious = calculatePortfolio({
+      accountNumber: '10001',
+      orders: held,
+      closes: [
+        {
+          instrumentId: 1,
+          close: Money.of('80.00'),
+          previousClose: null,
+        },
+      ],
+    });
+    expect(withoutPrevious.positions[0]).toMatchObject({
+      quantity: 2,
+      marketValue: '160.00',
+      totalReturnPercent: '60.00',
+      dailyReturnPercent: null,
+    });
+
+    const nonPositivePrevious = calculatePortfolio({
+      accountNumber: '10001',
+      orders: held,
+      closes: [
+        {
+          instrumentId: 1,
+          close: Money.of('80.00'),
+          previousClose: Money.of('0.00'),
+        },
+      ],
+    });
+    expect(nonPositivePrevious.positions[0]?.dailyReturnPercent).toBeNull();
+
+    const unchangedPrice = calculatePortfolio({
+      accountNumber: '10001',
+      orders: held,
+      closes: [
+        {
+          instrumentId: 1,
+          close: Money.of('50.00'),
+          previousClose: Money.of('50.00'),
+        },
+      ],
+    });
+    expect(unchangedPrice.positions[0]).toMatchObject({
+      totalReturnPercent: '0.00',
+      dailyReturnPercent: '0.00',
+    });
   });
 });

@@ -1,0 +1,355 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "El sistema está en marcha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                },
+                "examples": {
+                  "local": {
+                    "summary": "local",
+                    "value": {
+                      "status": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Estado del sistema",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/accounts/{accountNumber}/portfolio": {
+      "get": {
+        "operationId": "PortfolioController_show",
+        "parameters": [
+          {
+            "name": "accountNumber",
+            "required": true,
+            "in": "path",
+            "examples": {
+              "local": {
+                "summary": "local",
+                "value": "10001"
+              }
+            },
+            "schema": {
+              "example": "10001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Valor total, pesos disponibles y posiciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "accountNumber",
+                    "totalValue",
+                    "availablePesos",
+                    "positions"
+                  ],
+                  "properties": {
+                    "accountNumber": {
+                      "type": "string",
+                      "example": "10001"
+                    },
+                    "totalValue": {
+                      "type": "string",
+                      "pattern": "^-?\\d+\\.\\d{2}$",
+                      "example": "627500.00"
+                    },
+                    "availablePesos": {
+                      "type": "string",
+                      "pattern": "^-?\\d+\\.\\d{2}$",
+                      "example": "627500.00"
+                    },
+                    "positions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "La cuenta está vacía o es inválida"
+          },
+          "404": {
+            "description": "La cuenta no existe"
+          }
+        },
+        "summary": "Consultar el portfolio de una cuenta",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/instruments": {
+      "get": {
+        "operationId": "InstrumentsController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "examples": {
+              "local": {
+                "summary": "local",
+                "value": "teco"
+              }
+            },
+            "schema": {
+              "example": "teco"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activos que coinciden, sin la moneda"
+          },
+          "400": {
+            "description": "Falta el texto de búsqueda"
+          }
+        },
+        "summary": "Buscar activos por ticker o nombre",
+        "tags": [
+          "instruments"
+        ]
+      }
+    },
+    "/orders": {
+      "post": {
+        "description": "Escribe: crea una orden ejecutada, pendiente o rechazada.",
+        "operationId": "OrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "accountNumber",
+                  "ticker",
+                  "side",
+                  "type"
+                ],
+                "properties": {
+                  "accountNumber": {
+                    "type": "string",
+                    "example": "10001"
+                  },
+                  "ticker": {
+                    "type": "string",
+                    "example": "GGAL"
+                  },
+                  "side": {
+                    "type": "string",
+                    "enum": [
+                      "BUY",
+                      "SELL"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "MARKET",
+                      "LIMIT"
+                    ]
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+\\.\\d{2}$",
+                    "example": "627500.00"
+                  },
+                  "price": {
+                    "type": "string",
+                    "pattern": "^-?\\d+\\.\\d{2}$",
+                    "example": "627500.00"
+                  }
+                }
+              },
+              "examples": {
+                "local": {
+                  "summary": "Compra por cantidad",
+                  "description": "Compra a mercado indicando la cantidad de acciones. Escribe en la cuenta.",
+                  "value": {
+                    "accountNumber": "10001",
+                    "ticker": "GGAL",
+                    "side": "BUY",
+                    "type": "MARKET",
+                    "quantity": 1
+                  }
+                },
+                "localAmount": {
+                  "summary": "Compra por monto",
+                  "description": "Compra a mercado indicando un monto en pesos. La cantidad es la mayor cantidad entera de acciones que ese monto alcanza. Escribe en la cuenta.",
+                  "value": {
+                    "accountNumber": "10001",
+                    "ticker": "GGAL",
+                    "side": "BUY",
+                    "type": "MARKET",
+                    "amount": "1000.00"
+                  }
+                },
+                "localLimit": {
+                  "summary": "Compra límite",
+                  "description": "Compra límite de una acción al precio indicado. Queda pendiente y reserva ese precio. Escribe en la cuenta.",
+                  "value": {
+                    "accountNumber": "10001",
+                    "ticker": "GGAL",
+                    "side": "BUY",
+                    "type": "LIMIT",
+                    "quantity": 1,
+                    "price": "800.00"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "La orden quedó registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "price": {
+                      "type": "string",
+                      "pattern": "^-?\\d+\\.\\d{2}$",
+                      "example": "627500.00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "El envío es inválido y no se crea una orden"
+          },
+          "404": {
+            "description": "La cuenta o el activo no existen"
+          }
+        },
+        "summary": "Enviar una compra o una venta",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{orderId}/cancellation": {
+      "post": {
+        "description": "Escribe: libera la reserva de una orden pendiente.",
+        "operationId": "OrdersCancellationController_cancel",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": true,
+            "in": "path",
+            "examples": {
+              "local": {
+                "summary": "local",
+                "value": 5
+              }
+            },
+            "schema": {
+              "example": 5
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "accountNumber"
+                ],
+                "properties": {
+                  "accountNumber": {
+                    "type": "string",
+                    "example": "10001"
+                  }
+                }
+              },
+              "examples": {
+                "local": {
+                  "summary": "local",
+                  "description": "Cancela la orden pendiente de los datos locales. Escribe.",
+                  "value": {
+                    "accountNumber": "10001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "La orden quedó cancelada"
+          },
+          "404": {
+            "description": "La orden no existe para esa cuenta"
+          },
+          "409": {
+            "description": "La orden no está pendiente"
+          }
+        },
+        "summary": "Cancelar una orden pendiente",
+        "tags": [
+          "orders"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Cocos Challenge API",
+    "description": "Portfolio, búsqueda y órdenes. Los montos son texto con dos decimales. Los ejemplos local pegan a http://localhost:3000.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "components": {
+    "schemas": {}
+  }
+}

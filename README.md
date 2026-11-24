@@ -55,6 +55,15 @@ npm run test:integration
 
 `npm test` cubre dominio y casos de uso sin base. La cobertura de statements, branches, functions y lines tiene que superar el 80 %. `npm run test:integration` ejecuta el envío de una orden contra PostgreSQL.
 
+## Documentación
+
+Con el sistema en marcha:
+
+- `GET /docs` abre la página para leer y ejecutar las operaciones. Los ejemplos `local` ya vienen cargados.
+- `GET /docs-json` devuelve la descripción OpenAPI de esas mismas operaciones.
+
+La página se arma desde las operaciones públicas. No hace falta editar una segunda descripción a mano cuando se agrega o cambia una. La copia versionada se regenera con `npm run openapi:generate`.
+
 ## Contrato
 
-El contrato HTTP está en `specs/001-portfolio-orders/contracts/openapi.yaml`. La colección de Postman está en `postman/cocos-challenge.postman_collection.json`.
+El contrato HTTP está en `specs/001-portfolio-orders/contracts/openapi.yaml`. La descripción vigente generada está en `specs/002-live-openapi-docs/contracts/openapi.json`. La colección de Postman está en `postman/cocos-challenge.postman_collection.json`.
